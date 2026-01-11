@@ -1,4 +1,6 @@
 # Building Discord: From Socket to Scale (The Real-Time Engineering Masterclass)
+### Detaild Lesson, Diagrams & Implmentation guide :
+https://javatsc.substack.com/p/course-structure-and-detailed-curriculum
 
 A 90-day deep dive into building a massive-scale chat and voice platform. We dissect the engineering that powers Discord, Slack, and Telegram. We move from simple point-to-point sockets to designing the "Gateway" pattern, solving the "Thundering Herd" problem, optimizing massive message storage with ScyllaDB patterns, and handling voice signaling via SFUs. This is not just about features; it's about architecture that survives millions of concurrent users.
 
