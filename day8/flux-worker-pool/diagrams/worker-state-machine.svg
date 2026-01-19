@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 400">
+  <rect width="700" height="400" fill="#ffffff"/>
+  
+  <text x="350" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#1f2937">
+    Virtual Thread Worker Lifecycle
+  </text>
+  
+  <!-- States -->
+  <ellipse cx="150" cy="120" rx="80" ry="40" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+  <text x="150" y="120" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#065f46">IDLE</text>
+  <text x="150" y="135" font-family="Arial" font-size="9" text-anchor="middle" fill="#065f46">(poll() blocking)</text>
+  
+  <ellipse cx="350" cy="120" rx="90" ry="40" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="350" y="120" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#92400e">PROCESSING</text>
+  <text x="350" y="135" font-family="Arial" font-size="9" text-anchor="middle" fill="#92400e">(CPU-bound work)</text>
+  
+  <ellipse cx="550" cy="120" rx="80" ry="40" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="550" y="120" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#1e40af">BLOCKED</text>
+  <text x="550" y="135" font-family="Arial" font-size="9" text-anchor="middle" fill="#1e40af">(I/O wait)</text>
+  
+  <ellipse cx="350" cy="280" rx="90" ry="40" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+  <text x="350" y="280" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#3730a3">COMPLETED</text>
+  <text x="350" y="295" font-family="Arial" font-size="9" text-anchor="middle" fill="#3730a3">(task done)</text>
+  
+  <!-- Transitions -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#374151"/>
+    </marker>
+  </defs>
+  
+  <!-- IDLE -> PROCESSING -->
+  <path d="M 230 120 L 260 120" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="245" y="110" font-family="Arial" font-size="9" text-anchor="middle" fill="#374151">task available</text>
+  
+  <!-- PROCESSING -> BLOCKED -->
+  <path d="M 440 120 L 470 120" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="455" y="110" font-family="Arial" font-size="9" text-anchor="middle" fill="#374151">I/O call</text>
+  
+  <!-- BLOCKED -> PROCESSING -->
+  <path d="M 535 150 Q 470 180 410 150" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="475" y="190" font-family="Arial" font-size="9" text-anchor="middle" fill="#374151">data ready</text>
+  
+  <!-- PROCESSING -> COMPLETED -->
+  <path d="M 350 160 L 350 240" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="365" y="200" font-family="Arial" font-size="9" fill="#374151">finish</text>
+  
+  <!-- COMPLETED -> IDLE (loop) -->
+  <path d="M 260 270 Q 100 320 100 180 L 100 155" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,5"/>
+  <text x="80" y="250" font-family="Arial" font-size="9" fill="#374151">new task</text>
+  
+  <!-- COMPLETED -> EXIT -->
+  <rect x="450" y="260" width="80" height="40" fill="#fee2e2" stroke="#ef4444" stroke-width="2" rx="5"/>
+  <text x="490" y="285" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#991b1b">EXIT</text>
+  
+  <path d="M 440 280 L 450 280" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="445" y="270" font-family="Arial" font-size="9" text-anchor="middle" fill="#374151">shutdown</text>
+  
+  <!-- Notes -->
+  <rect x="50" y="340" width="600" height="50" fill="#f9fafb" stroke="#d1d5db" stroke-width="1" rx="3"/>
+  <text x="60" y="360" font-family="Arial" font-size="10" font-weight="bold" fill="#374151">Key Properties:</text>
+  <text x="60" y="375" font-family="Arial" font-size="9" fill="#6b7280">• Virtual Threads park (not block) when waiting → no OS thread wasted</text>
+  <text x="400" y="375" font-family="Arial" font-size="9" fill="#6b7280">• JVM scheduler manages millions efficiently</text>
+</svg>

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700">
+  <rect width="600" height="700" fill="#ffffff"/>
+  
+  <text x="300" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#1f2937">
+    Message Flow: Socket → Worker → Response
+  </text>
+  
+  <!-- Timeline -->
+  <line x1="100" y1="60" x2="100" y2="650" stroke="#d1d5db" stroke-width="2"/>
+  
+  <!-- Step 1 -->
+  <circle cx="100" cy="80" r="8" fill="#3b82f6"/>
+  <text x="130" y="85" font-family="Arial" font-size="12" font-weight="bold" fill="#1f2937">T=0ms: Client sends frame</text>
+  <rect x="130" y="95" width="420" height="50" fill="#eff6ff" stroke="#3b82f6" stroke-width="1" rx="3"/>
+  <text x="140" y="115" font-family="monospace" font-size="10" fill="#1e40af">SocketChannel.read(buffer)</text>
+  <text x="140" y="130" font-family="Arial" font-size="9" fill="#64748b">→ Selector thread wakes, reads 512 bytes</text>
+  
+  <!-- Step 2 -->
+  <circle cx="100" cy="170" r="8" fill="#3b82f6"/>
+  <text x="130" y="175" font-family="Arial" font-size="12" font-weight="bold" fill="#1f2937">T=0.5ms: Parse & slice</text>
+  <rect x="130" y="185" width="420" height="65" fill="#eff6ff" stroke="#3b82f6" stroke-width="1" rx="3"/>
+  <text x="140" y="205" font-family="monospace" font-size="10" fill="#1e40af">ByteBuffer payload = buffer.slice()</text>
+  <text x="140" y="220" font-family="monospace" font-size="10" fill="#1e40af">Task task = new Task(connId, payload, ...)</text>
+  <text x="140" y="235" font-family="Arial" font-size="9" fill="#64748b">→ Zero-copy view (shares backing array)</text>
+  
+  <!-- Step 3 -->
+  <circle cx="100" cy="275" r="8" fill="#f59e0b"/>
+  <text x="130" y="280" font-family="Arial" font-size="12" font-weight="bold" fill="#1f2937">T=1ms: Enqueue task</text>
+  <rect x="130" y="290" width="420" height="65" fill="#fffbeb" stroke="#f59e0b" stroke-width="1" rx="3"/>
+  <text x="140" y="310" font-family="monospace" font-size="10" fill="#92400e">if (!taskQueue.offer(task)) {</text>
+  <text x="150" y="325" font-family="monospace" font-size="10" fill="#92400e">  rejectedTasks.increment()</text>
+  <text x="140" y="340" font-family="monospace" font-size="10" fill="#92400e">}</text>
+  <text x="140" y="350" font-family="Arial" font-size="9" fill="#64748b">→ Non-blocking, returns immediately</text>
+  
+  <!-- Step 4 -->
+  <circle cx="100" cy="380" r="8" fill="#22c55e"/>
+  <text x="130" y="385" font-family="Arial" font-size="12" font-weight="bold" fill="#1f2937">T=1.2ms: Worker picks up</text>
+  <rect x="130" y="395" width="420" height="50" fill="#f0fdf4" stroke="#22c55e" stroke-width="1" rx="3"/>
+  <text x="140" y="415" font-family="monospace" font-size="10" fill="#166534">Task t = taskQueue.poll(1, SECONDS)</text>
+  <text x="140" y="430" font-family="Arial" font-size="9" fill="#64748b">→ Virtual Thread wakes, acquires task</text>
+  
+  <!-- Step 5 -->
+  <circle cx="100" cy="470" r="8" fill="#22c55e"/>
+  <text x="130" y="475" font-family="Arial" font-size="12" font-weight="bold" fill="#1f2937">T=1.2-6.2ms: Process</text>
+  <rect x="130" y="485" width="420" height="80" fill="#f0fdf4" stroke="#22c55e" stroke-width="1" rx="3"/>
+  <text x="140" y="505" font-family="monospace" font-size="10" fill="#166534">String json = task.payloadAsString()</text>
+  <text x="140" y="520" font-family="monospace" font-size="10" fill="#166534">Message msg = parseJSON(json)  // 3ms</text>
+  <text x="140" y="535" font-family="monospace" font-size="10" fill="#166534">Result r = validate(msg)       // 2ms</text>
+  <text x="140" y="550" font-family="Arial" font-size="9" fill="#64748b">→ CPU-bound work (JSON, validation)</text>
+  
+  <!-- Step 6 -->
+  <circle cx="100" cy="590" r="8" fill="#8b5cf6"/>
+  <text x="130" y="595" font-family="Arial" font-size="12" font-weight="bold" fill="#1f2937">T=6.2ms: Send response</text>
+  <rect x="130" y="605" width="420" height="50" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1" rx="3"/>
+  <text x="140" y="625" font-family="monospace" font-size="10" fill="#5b21b6">responseQueue.offer(response)</text>
+  <text x="140" y="640" font-family="Arial" font-size="9" fill="#64748b">→ Response handler writes to socket</text>
+  
+  <!-- Legend -->
+  <text x="50" y="680" font-family="Arial" font-size="10" font-weight="bold" fill="#374151">Total latency: ~6.2ms</text>
+  <text x="300" y="680" font-family="Arial" font-size="9" fill="#64748b">(p99 target: <50ms)</text>
+</svg>
