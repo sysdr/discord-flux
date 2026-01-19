@@ -1,0 +1,31 @@
+╔════════════════════════════════════════╗
+║   WINDOWS FIREWALL FIX INSTRUCTIONS    ║
+╚════════════════════════════════════════╝
+
+The reactor is running correctly in WSL, but Windows Firewall
+is blocking connections from your browser.
+
+QUICK FIX (PowerShell as Administrator):
+----------------------------------------
+1. Right-click PowerShell → Run as Administrator
+2. Run this command:
+
+   New-NetFirewallRule -DisplayName "WSL Dashboard Port 8080" `
+     -Direction Inbound -LocalPort 8080 -Protocol TCP -Action Allow
+
+OR use the provided script:
+   .\fix-windows-firewall.ps1
+
+GUI METHOD:
+-----------
+1. Press Win+R, type: wf.msc
+2. Inbound Rules → New Rule...
+3. Port → TCP → 8080 → Allow → All profiles → Name: "WSL Dashboard"
+
+ALTERNATIVE - Use WSL IP:
+-------------------------
+Try: http://172.22.24.182:8080/dashboard
+(This might work without firewall changes)
+
+After fixing, access:
+http://localhost:8080/dashboard
