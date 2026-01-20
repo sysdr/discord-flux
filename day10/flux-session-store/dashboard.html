@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux Session Store Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        .card h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #00ff00;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .metric .label { color: #00aa00; }
+        .metric .value {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #003300;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 15px #00ff00;
+        }
+        button:active { transform: scale(0.95); }
+        #chart {
+            width: 100%;
+            height: 300px;
+            background: #0a0a0a;
+            border: 1px solid #00ff00;
+            position: relative;
+            overflow: hidden;
+        }
+        #log {
+            background: #000;
+            border: 2px solid #00ff00;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .log-entry {
+            margin: 5px 0;
+            color: #00aa00;
+        }
+        .log-entry .timestamp {
+            color: #006600;
+            margin-right: 10px;
+        }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ FLUX SESSION STORE DASHBOARD ⚡</h1>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>📊 LIVE METRICS</h2>
+                <div class="metric">
+                    <span class="label">Total Sessions:</span>
+                    <span class="value" id="total">0</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Active:</span>
+                    <span class="value" id="active" style="color: #00ff00;">0</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Idle:</span>
+                    <span class="value" id="idle" style="color: #ffaa00;">0</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Zombie:</span>
+                    <span class="value" id="zombie" style="color: #ff0000;">0</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💾 MEMORY USAGE</h2>
+                <div class="metric">
+                    <span class="label">Heap Used:</span>
+                    <span class="value" id="heap">0</span>
+                    <span class="label">MB</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Cleanup Cycles:</span>
+                    <span class="value" id="cleanups">0</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🎮 CONTROLS</h2>
+                <div class="controls">
+                    <button onclick="createSessions(1000)">+1K Sessions</button>
+                    <button onclick="createSessions(10000)">+10K Sessions</button>
+                    <button onclick="createSessions(100000)">+100K Sessions</button>
+                    <button onclick="markIdle()">Mark 50% Idle</button>
+                    <button onclick="manualCleanup()">Force Cleanup</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📈 SESSION HISTORY</h2>
+            <canvas id="chart"></canvas>
+        </div>
+
+        <div class="card">
+            <h2>📝 EVENT LOG</h2>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('chart');
+        const ctx = canvas.getContext('2d');
+        const dataPoints = [];
+        const maxPoints = 60;
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 300;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawChart() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (dataPoints.length === 0) return;
+
+            const maxValue = Math.max(...dataPoints.map(d => d.total), 1);
+            const step = canvas.width / maxPoints;
+            
+            // Grid
+            ctx.strokeStyle = '#003300';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const y = (canvas.height / 10) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Total line
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            dataPoints.forEach((point, i) => {
+                const x = i * step;
+                const y = canvas.height - (point.total / maxValue) * canvas.height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Active line
+            ctx.strokeStyle = '#00aaff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            dataPoints.forEach((point, i) => {
+                const x = i * step;
+                const y = canvas.height - (point.active / maxValue) * canvas.height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+            
+            // Keep only last 20 entries
+            while (logDiv.children.length > 20) {
+                logDiv.removeChild(logDiv.lastChild);
+            }
+        }
+
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/api/metrics');
+                const metrics = await response.json();
+                
+                document.getElementById('total').textContent = metrics.total;
+                document.getElementById('active').textContent = metrics.active;
+                document.getElementById('idle').textContent = metrics.idle;
+                document.getElementById('zombie').textContent = metrics.zombie;
+                document.getElementById('heap').textContent = metrics.heapMB;
+                document.getElementById('cleanups').textContent = metrics.cleanups;
+
+                dataPoints.push({
+                    total: metrics.total,
+                    active: metrics.active
+                });
+                if (dataPoints.length > maxPoints) dataPoints.shift();
+                
+                drawChart();
+            } catch (error) {
+                log('❌ Failed to fetch metrics: ' + error.message);
+            }
+        }
+
+        async function createSessions(count) {
+            log(`🔄 Creating ${count} sessions...`);
+            try {
+                const response = await fetch('/api/sessions/create', {
+                    method: 'POST',
+                    body: 'count=' + count
+                });
+                const result = await response.json();
+                log(`✅ Created ${result.created} sessions`);
+                fetchMetrics();
+            } catch (error) {
+                log('❌ Failed to create sessions: ' + error.message);
+            }
+        }
+
+        async function markIdle() {
+            log('🔄 Marking sessions as idle...');
+            try {
+                const response = await fetch('/api/sessions/mark-idle', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                log(`✅ Marked ${result.marked} sessions as idle (will be cleaned in 60s)`);
+                fetchMetrics();
+            } catch (error) {
+                log('❌ Failed to mark idle: ' + error.message);
+            }
+        }
+
+        async function manualCleanup() {
+            log('🔄 Running manual cleanup...');
+            try {
+                const response = await fetch('/api/sessions/cleanup', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                log(`✅ Cleanup removed ${result.removed} stale sessions`);
+                fetchMetrics();
+            } catch (error) {
+                log('❌ Failed to cleanup: ' + error.message);
+            }
+        }
+
+        // Auto-refresh metrics every 2 seconds
+        setInterval(fetchMetrics, 2000);
+        fetchMetrics();
+
+        log('🚀 Dashboard initialized');
+    </script>
+</body>
+</html>
