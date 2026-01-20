@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package flux;
+
+option java_package = "com.flux.serialization.model";
+option java_outer_classname = "MessageProto";
+
+message VoiceStateUpdate {
+    int64 user_id = 1;
+    int64 guild_id = 2;
+    int64 channel_id = 3;
+    bool muted = 4;
+    bool deafened = 5;
+}
