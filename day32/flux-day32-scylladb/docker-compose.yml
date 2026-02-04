@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  scylla:
+    image: scylladb/scylla:5.4.0
+    container_name: scylla
+    ports:
+      - "9042:9042"   # CQL native transport
+      - "19042:19042" # CQL SSL transport
+    volumes:
+      - scylla-data:/var/lib/scylla
+    command: --smp 1 --memory 1G --overprovisioned 1
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  scylla-data:
