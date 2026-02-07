@@ -1,0 +1,72 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .box { fill: white; stroke: #2c3e50; stroke-width: 2; }
+      .title { font-family: Arial; font-size: 14px; font-weight: bold; fill: #2c3e50; }
+      .text { font-family: Arial; font-size: 12px; fill: #34495e; }
+      .arrow { stroke: #3498db; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .db { fill: #ecf0f1; stroke: #7f8c8d; stroke-width: 2; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#3498db" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title" font-size="18">Component Architecture</text>
+  
+  <!-- HTTP Client -->
+  <rect x="50" y="80" width="150" height="80" class="box"/>
+  <text x="125" y="105" text-anchor="middle" class="title">HTTP Client</text>
+  <text x="125" y="125" text-anchor="middle" class="text">Browser/App</text>
+  <text x="125" y="145" text-anchor="middle" class="text">GET /messages</text>
+  
+  <!-- HTTP Server -->
+  <rect x="300" y="80" width="200" height="80" class="box"/>
+  <text x="400" y="105" text-anchor="middle" class="title">HttpServer</text>
+  <text x="400" y="125" text-anchor="middle" class="text">Virtual Thread Pool</text>
+  <text x="400" y="145" text-anchor="middle" class="text">Request Routing</text>
+  
+  <!-- Pagination Service -->
+  <rect x="300" y="220" width="200" height="120" class="box"/>
+  <text x="400" y="245" text-anchor="middle" class="title">PaginationService</text>
+  <text x="400" y="270" text-anchor="middle" class="text">Cursor Decoding</text>
+  <text x="400" y="290" text-anchor="middle" class="text">Query Preparation</text>
+  <text x="400" y="310" text-anchor="middle" class="text">ResultSet Streaming</text>
+  <text x="400" y="330" text-anchor="middle" class="text">Metrics Tracking</text>
+  
+  <!-- Cassandra Client -->
+  <rect x="300" y="400" width="200" height="100" class="box"/>
+  <text x="400" y="425" text-anchor="middle" class="title">CassandraClient</text>
+  <text x="400" y="445" text-anchor="middle" class="text">CqlSession Pool</text>
+  <text x="400" y="465" text-anchor="middle" class="text">PreparedStatements</text>
+  <text x="400" y="485" text-anchor="middle" class="text">Connection Management</text>
+  
+  <!-- Cassandra Cluster -->
+  <ellipse cx="650" cy="450" rx="100" ry="80" class="db"/>
+  <text x="650" y="440" text-anchor="middle" class="title">Cassandra</text>
+  <text x="650" y="460" text-anchor="middle" class="text">Cluster</text>
+  <text x="650" y="480" text-anchor="middle" class="text">flux.messages</text>
+  
+  <!-- Arrows -->
+  <path d="M 200 120 L 300 120" class="arrow"/>
+  <text x="250" y="115" text-anchor="middle" class="text">HTTP Request</text>
+  
+  <path d="M 400 160 L 400 220" class="arrow"/>
+  <text x="420" y="195" text-anchor="middle" class="text">Delegate</text>
+  
+  <path d="M 400 340 L 400 400" class="arrow"/>
+  <text x="420" y="375" text-anchor="middle" class="text">Execute Query</text>
+  
+  <path d="M 500 450 L 550 450" class="arrow"/>
+  <text x="525" y="445" text-anchor="middle" class="text">CQL</text>
+  
+  <path d="M 550 455 L 500 455" class="arrow" marker-end="url(#arrowhead)" marker-start="url(#arrowhead)"/>
+  <text x="525" y="475" text-anchor="middle" class="text">ResultSet</text>
+  
+  <!-- Legend -->
+  <rect x="50" y="520" width="700" height="60" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+  <text x="60" y="540" class="text" font-weight="bold">Key Points:</text>
+  <text x="60" y="558" class="text">• Virtual Threads handle concurrent pagination requests without thread pool exhaustion</text>
+  <text x="60" y="572" class="text">• PreparedStatements cached for query optimization • ResultSet streaming prevents heap materialization</text>
+</svg>

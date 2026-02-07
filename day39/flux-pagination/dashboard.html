@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux Pagination Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: #0a0e27;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 24px;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #00d4ff;
+            padding-bottom: 10px;
+        }
+        .controls {
+            background: #1a1f3a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #2a3f5f;
+        }
+        .control-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        label {
+            color: #00d4ff;
+            font-size: 14px;
+            min-width: 100px;
+        }
+        input, select {
+            background: #0a0e27;
+            color: #e0e0e0;
+            border: 1px solid #2a3f5f;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        button {
+            background: #00d4ff;
+            color: #0a0e27;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #00a8cc; }
+        button:disabled {
+            background: #2a3f5f;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #1a1f3a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #2a3f5f;
+        }
+        .stat-label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            color: #00d4ff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .messages {
+            background: #1a1f3a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #2a3f5f;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .message {
+            background: #0a0e27;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #00d4ff;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        .message-id { color: #00d4ff; }
+        .message-time { color: #888; }
+        .message-content {
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        .cursor-info {
+            background: #0a0e27;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Flux Pagination Dashboard</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Queries</div>
+                <div class="stat-value" id="totalQueries">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Latency (ms)</div>
+                <div class="stat-value" id="avgLatency">0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Messages Loaded</div>
+                <div class="stat-value" id="messagesLoaded">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Current Page</div>
+                <div class="stat-value" id="currentPage">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Channel ID:</label>
+                <input type="number" id="channelId" value="1" />
+                
+                <label>Page Size:</label>
+                <input type="number" id="pageSize" value="50" min="10" max="100" />
+                
+                <button onclick="loadInitialPage()">Load Initial Page</button>
+                <button onclick="insertMessage()">Insert Message</button>
+            </div>
+        </div>
+        
+        <div class="messages">
+            <div id="messageList"></div>
+            
+            <div class="pagination-controls">
+                <button id="prevBtn" onclick="loadPreviousPage()" disabled>← Previous</button>
+                <button id="nextBtn" onclick="loadNextPage()" disabled>Next →</button>
+            </div>
+            
+            <div class="cursor-info">
+                <strong>Next Cursor:</strong> <span id="nextCursor">null</span><br>
+                <strong>Previous Cursor:</strong> <span id="prevCursor">null</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCursor = null;
+        let previousCursor = null;
+        let currentPageNum = 0;
+        
+        async function loadInitialPage() {
+            currentCursor = null;
+            previousCursor = null;
+            currentPageNum = 0;
+            await loadPage(null, 'next');
+        }
+        
+        async function loadNextPage() {
+            if (currentCursor) {
+                currentPageNum++;
+                await loadPage(currentCursor, 'next');
+            }
+        }
+        
+        async function loadPreviousPage() {
+            if (previousCursor && currentPageNum > 0) {
+                currentPageNum--;
+                await loadPage(previousCursor, 'previous');
+            }
+        }
+        
+        async function loadPage(cursor, direction) {
+            const channelId = document.getElementById('channelId').value;
+            const pageSize = document.getElementById('pageSize').value;
+            
+            let url = `/messages?channel_id=${channelId}&limit=${pageSize}&direction=${direction}`;
+            if (cursor) {
+                url += `&cursor=${encodeURIComponent(cursor)}`;
+            }
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                displayMessages(data.messages);
+                
+                currentCursor = data.nextCursor;
+                previousCursor = data.previousCursor;
+                
+                document.getElementById('nextCursor').textContent = data.nextCursor || 'null';
+                document.getElementById('prevCursor').textContent = data.previousCursor || 'null';
+                
+                document.getElementById('nextBtn').disabled = !data.hasMore;
+                document.getElementById('prevBtn').disabled = currentPageNum === 0;
+                
+                document.getElementById('messagesLoaded').textContent = data.messages.length;
+                document.getElementById('currentPage').textContent = currentPageNum;
+                
+                updateStats();
+            } catch (error) {
+                console.error('Error loading page:', error);
+            }
+        }
+        
+        function displayMessages(messages) {
+            const messageList = document.getElementById('messageList');
+            messageList.innerHTML = '';
+            
+            messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-id">ID: ${msg.messageId}</span>
+                        <span class="message-time">${new Date(msg.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div class="message-content">
+                        <strong>Author ${msg.authorId}:</strong> ${msg.content}
+                    </div>
+                `;
+                messageList.appendChild(div);
+            });
+        }
+        
+        async function updateStats() {
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+                
+                document.getElementById('totalQueries').textContent = data.totalQueries;
+                document.getElementById('avgLatency').textContent = data.averageLatencyMs.toFixed(2);
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+        
+        async function insertMessage() {
+            const channelId = document.getElementById('channelId').value;
+            const content = prompt('Enter message content:') || 'Test message';
+            
+            try {
+                await fetch('/insert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `channel_id=${channelId}&author_id=9999&content=${encodeURIComponent(content)}`
+                });
+                
+                alert('Message inserted! Click "Load Initial Page" to refresh.');
+            } catch (error) {
+                console.error('Error inserting message:', error);
+            }
+        }
+        
+        // Auto-load initial page on dashboard load to populate metrics
+        document.addEventListener('DOMContentLoaded', () => loadInitialPage());
+        
+        // Auto-refresh stats every 2 seconds
+        setInterval(updateStats, 2000);
+    </script>
+</body>
+</html>
