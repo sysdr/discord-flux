@@ -1,0 +1,7 @@
+[
+  {"id": 1, "channelId": 100, "userId": "user001", "content": "First message in general channel", "timestamp": 1704067200000},
+  {"id": 2, "channelId": 100, "userId": "user002", "content": "Welcome everyone!", "timestamp": 1704067260000},
+  {"id": 3, "channelId": 100, "userId": "user003", "content": "Excited to be here", "timestamp": 1704067320000},
+  {"id": 4, "channelId": 101, "userId": "user001", "content": "Tech discussion starts here", "timestamp": 1704067380000},
+  {"id": 5, "channelId": 101, "userId": "user004", "content": "What are we building today?", "timestamp": 1704067440000}
+]
