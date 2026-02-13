@@ -1,0 +1,112 @@
+services:
+  registry:
+    image: redis:7-alpine
+    container_name: flux-registry
+    ports:
+      - "6379:6379"
+    networks:
+      - flux-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  gateway-1:
+    build: ./gateway
+    container_name: flux-gateway-1
+    environment:
+      - NODE_ID=gateway-1
+      - REDIS_HOST=registry
+      - REDIS_PORT=6379
+      - WEBSOCKET_PORT=8080
+      - HEALTH_PORT=8081
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseZGC
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - flux-network
+    stop_grace_period: 30s
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  gateway-2:
+    build: ./gateway
+    container_name: flux-gateway-2
+    environment:
+      - NODE_ID=gateway-2
+      - REDIS_HOST=registry
+      - REDIS_PORT=6379
+      - WEBSOCKET_PORT=8080
+      - HEALTH_PORT=8081
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseZGC
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - flux-network
+    stop_grace_period: 30s
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  gateway-3:
+    build: ./gateway
+    container_name: flux-gateway-3
+    environment:
+      - NODE_ID=gateway-3
+      - REDIS_HOST=registry
+      - REDIS_PORT=6379
+      - WEBSOCKET_PORT=8080
+      - HEALTH_PORT=8081
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseZGC
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - flux-network
+    stop_grace_period: 30s
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  loadbalancer:
+    build: ./loadbalancer
+    container_name: flux-loadbalancer
+    ports:
+      - "8080:8080"  # WebSocket proxy port
+      - "9090:9090"  # Dashboard HTTP port
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - REDIS_HOST=registry
+      - REDIS_PORT=6379
+      - PROXY_PORT=8080
+      - DASHBOARD_PORT=9090
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+    depends_on:
+      - gateway-1
+      - gateway-2
+      - gateway-3
+    networks:
+      - flux-network
+    mem_limit: 256m
+    cpus: 0.5
+
+networks:
+  flux-network:
+    driver: bridge
