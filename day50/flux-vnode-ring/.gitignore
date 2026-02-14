@@ -1,0 +1,42 @@
+# Build artifacts
+target/
+build/
+dist/
+*.class
+*.jar
+*.war
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Istio
+*istio*
+
+# Secrets (never commit)
+.env
+.env.local
+*.pem
+secrets/
+*.key
+*.secret
