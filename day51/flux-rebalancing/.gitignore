@@ -1,0 +1,30 @@
+# Build
+target/
+*.class
+*.jar
+
+# Generated / temp
+DemoScenario.java
+DemoScenario.class
+Verify.java
+Verify.class
+
+# Python / Node
+node_modules/
+venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+*.secret
+secrets/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Istio
+*istio*
